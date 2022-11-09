@@ -5,62 +5,63 @@ import React, {
   useMemo,
   useEffect,
   useRef,
+  createContext,
+  useContext,
 } from 'react';
-import P from 'prop-types';
 
-const Post = ({ post, getTitle }) => {
-  console.log('filho');
-  return <p onClick={() => getTitle(post.title)}>{post.title}</p>;
+const globalVariables = {
+  title: 'banana',
+  body: 'banana, banana',
+  counter: 0,
 };
 
-const App = () => {
-  const [posts, setPosts] = useState([]);
-  const [value, setValue] = useState('');
-  const input = useRef(null);
-  const contador = useRef(0);
-  console.log('pai');
+const GlobalContext = createContext();
 
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts')
-      .then((res) => res.json())
-      .then((res) => setPosts(res));
-  }, []);
-
-  useEffect(() => {
-    contador.current++;
-  });
-
-  const getTitle = (title) => {
-    console.log(title);
-    setValue(title);
-    input.current.focus();
-  };
-
+const Div = () => {
   return (
-    <div className="App">
-      <h6>Renderizou: {contador.current}x</h6>
-      <h1>oi</h1>
-      <input
-        ref={input}
-        value={value}
-        onChange={useCallback((e) => setValue(e.target.value), [])}
-      />
-      {useMemo(
-        () =>
-          posts.map((post) => {
-            return <Post getTitle={getTitle} key={post.id} post={post} />;
-          }),
-        [posts],
-      )}
-    </div>
+    <>
+      <H1 />
+      <P />
+    </>
   );
 };
 
-Post.propTypes = {
-  post: P.shape({
-    title: P.string,
-  }),
-  getTitle: P.func,
+const H1 = () => {
+  const {
+    contextState: { title, counter },
+  } = useContext(GlobalContext);
+  console.log('filho h1');
+  return <h1>{title + counter}</h1>;
 };
+const P = () => {
+  const {
+    contextState: { body },
+    setContextState,
+  } = useContext(GlobalContext);
+  console.log('filho p');
+  return (
+    <p
+      onClick={() => setContextState((s) => ({ ...s, counter: s.counter + 1 }))}
+    >
+      {body}
+    </p>
+  );
+};
+
+const App = () => {
+  const [contextState, setContextState] = useState(globalVariables);
+  return (
+    <GlobalContext.Provider value={{ contextState, setContextState }}>
+      <Div />
+    </GlobalContext.Provider>
+  );
+};
+
+// Post.propTypes = {
+//   post: P.shape({
+//     title: P.string,
+//   }),
+//   getTitle: P.func,
+// };
 
 export default App;
