@@ -1,15 +1,23 @@
 import './App.css';
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from 'react';
 import P from 'prop-types';
 
-const Post = ({ post }) => {
+const Post = ({ post, getTitle }) => {
   console.log('filho');
-  return <p>{post.title}</p>;
+  return <p onClick={() => getTitle(post.title)}>{post.title}</p>;
 };
 
 const App = () => {
   const [posts, setPosts] = useState([]);
   const [value, setValue] = useState('');
+  const input = useRef(null);
+  const contador = useRef(0);
   console.log('pai');
 
   useEffect(() => {
@@ -18,17 +26,29 @@ const App = () => {
       .then((res) => setPosts(res));
   }, []);
 
+  useEffect(() => {
+    contador.current++;
+  });
+
+  const getTitle = (title) => {
+    console.log(title);
+    setValue(title);
+    input.current.focus();
+  };
+
   return (
     <div className="App">
+      <h6>Renderizou: {contador.current}x</h6>
       <h1>oi</h1>
       <input
+        ref={input}
         value={value}
         onChange={useCallback((e) => setValue(e.target.value), [])}
       />
       {useMemo(
         () =>
           posts.map((post) => {
-            return <Post key={post.id} post={post} />;
+            return <Post getTitle={getTitle} key={post.id} post={post} />;
           }),
         [posts],
       )}
@@ -40,6 +60,7 @@ Post.propTypes = {
   post: P.shape({
     title: P.string,
   }),
+  getTitle: P.func,
 };
 
 export default App;
