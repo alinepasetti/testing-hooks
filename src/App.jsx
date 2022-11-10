@@ -1,35 +1,74 @@
 import './App.css';
-import React, { useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useRef } from 'react';
+import P, { node } from 'prop-types';
 
 const globalVariables = {
   title: 'banana',
   body: 'banana, banana',
   counter: 0,
 };
-const TYPES = {
-  increment_counter: 'increment_counter',
+
+const Context = createContext();
+
+// provider could send the dispatch
+// const AppContext = ({ children }) => {
+//   const [state, dispatch] = useReducer(reducer, globalVariables);
+//   return (
+//     <Context.Provider value={{ state, dispatch }}>{children}</Context.Provider>
+//   );
+// };
+
+// however, it's better to centralize the type responsibility to
+// the AppContext and send the function ready to be used
+const AppContext = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, globalVariables);
+
+  const changeTitle = (payload) => {
+    dispatch({ type: TYPES.CHANGE_TITLE, payload });
+  };
+  return (
+    <Context.Provider value={{ state, changeTitle }}>
+      {children}
+    </Context.Provider>
+  );
 };
 
-const reducer = (state, action) => {
-  switch (action.type) {
-    case TYPES.increment_counter:
-      return { ...state, counter: state.counter + 1 };
+const TYPES = {
+  CHANGE_TITLE: 'CHANGE_TITLE',
+};
+
+const reducer = (state, actions) => {
+  switch (actions.type) {
+    case TYPES.CHANGE_TITLE:
+      return { ...state, title: actions.payload };
   }
   return { ...state };
 };
 
-const App = () => {
-  const [state, dispatch] = useReducer(reducer, globalVariables);
-  const { title, counter } = state;
+AppContext.propTypes = {
+  children: P.node,
+};
+
+const H1 = () => {
+  const context = useContext(Context);
+  const inputRef = useRef(null);
   return (
-    <div>
-      <h1>
-        {title} {counter}
+    <>
+      <h1 onClick={() => context.changeTitle(inputRef.current.value)}>
+        {context.state.title}
       </h1>
-      <button onClick={() => dispatch({ type: TYPES.increment_counter })}>
-        mais um
-      </button>
-    </div>
+      <input type="text" ref={inputRef} />
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <AppContext>
+      <div>
+        <H1 />
+      </div>
+    </AppContext>
   );
 };
 
