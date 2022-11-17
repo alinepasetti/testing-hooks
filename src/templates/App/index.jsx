@@ -1,19 +1,43 @@
-import './styles.css';
-import { PostsProvider } from '../../contexts/PostsProvider';
-import { Posts } from '../../components/Posts';
-import { CounterProvider } from '../../contexts/CounterProvider';
-import { Counter } from '../../components/Counter';
+import { useState } from 'react';
+import { useFetch } from '../../hooks/useFetch';
 
-const App = () => {
-  return (
-    <CounterProvider>
-      <PostsProvider>
-        <h1>oi</h1>
-        <Counter />
-        <Posts />
-      </PostsProvider>
-    </CounterProvider>
+export const App = () => {
+  const [postId, setPostId] = useState('');
+  const [result, loading] = useFetch(
+    'https://jsonplaceholder.typicode.com/posts/' + postId,
+    {
+      headers: {
+        abc: '1' + postId,
+      },
+    },
   );
-};
 
-export default App;
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  const handleClick = (id) => {
+    setPostId(id);
+  };
+
+  if (!loading && result) {
+    // 1234
+    return (
+      <div>
+        {result?.length > 0 ? (
+          result.map((p) => (
+            <div key={`post-${p.id}`} onClick={() => handleClick(p.id)}>
+              <p>{p.title}</p>
+            </div>
+          ))
+        ) : (
+          <div onClick={() => handleClick('')}>
+            <p>{result.title}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return <h1>Oi</h1>;
+};
