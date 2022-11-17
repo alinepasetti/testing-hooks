@@ -21,7 +21,7 @@ export const Posts = () => {
       }
     });
 
-    () => {
+    return () => {
       isMounted.current = false;
     };
   }, [postsDispatch]);
