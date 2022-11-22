@@ -1,88 +1,83 @@
-import { Component, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-const s = {
-  style: {
-    fontSize: '60px',
-  },
-};
+const useAsync = (asyncFunction, shouldRun) => {
+  const [state, setState] = useState({
+    result: null,
+    error: null,
+    status: 'idle',
+  });
 
-class MyErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  const run = useCallback(() => {
+    setState({
+      result: null,
+      error: null,
+      status: 'pending',
+    });
 
-  static getDerivedStateFromError(error) {
-    // Atualiza o state para que a próxima renderização mostre a UI alternativa.
-    return { hasError: true };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    // Você também pode registrar o erro em um serviço de relatórios de erro
-    // console.log(error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // Você pode renderizar qualquer UI alternativa
-      return <p {...s}>Deu ruim =(</p>;
-    }
-    /* eslint-disable-next-line*/
-    return this.props.children;
-  }
-}
-
-const ItWillThrowError = () => {
-  const [counter, setCounter] = useState(0);
+    return asyncFunction()
+      .then((response) => {
+        setState({
+          result: response,
+          error: null,
+          status: 'settled',
+        });
+      })
+      .catch((err) => {
+        setState({
+          result: null,
+          error: err,
+          status: 'error',
+        });
+      });
+  }, [asyncFunction]);
 
   useEffect(() => {
-    if (counter > 3) {
-      throw new Error('Que chato!!!');
+    if (shouldRun) {
+      run();
     }
-  }, [counter]);
+  }, [run, shouldRun]);
 
-  return (
-    <div>
-      <button {...s} onClick={() => setCounter((s) => s + 1)}>
-        Click to increase {counter}
-      </button>
-    </div>
-  );
+  return [run, state.result, state.error, state.status];
+};
+
+const fetchData = async () => {
+  const data = await fetch('https://jsonplaceholder.typicode.com/posts/');
+  const json = await data.json();
+  return json;
 };
 
 export const App = () => {
-  return (
-    <div {...s}>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-      <MyErrorBoundary>
-        <ItWillThrowError />
-      </MyErrorBoundary>
-    </div>
-  );
+  const [reFetchData, result, error, status] = useAsync(fetchData, true);
+
+  useEffect(() => {
+    setTimeout(() => {
+      reFetchData();
+    }, 6000);
+  }, [reFetchData]);
+
+  function handleClick() {
+    reFetchData();
+  }
+
+  if (status === 'idle') {
+    return <pre>idle: Nada executando</pre>;
+  }
+
+  if (status === 'pending') {
+    return <pre>pending: Loading...</pre>;
+  }
+
+  if (status === 'error') {
+    return <pre>error: {error.message}</pre>;
+  }
+
+  if (status === 'settled') {
+    return (
+      <pre onClick={handleClick}>
+        settled: {JSON.stringify(result, null, 2)}
+      </pre>
+    );
+  }
+
+  return 'IXIII';
 };
