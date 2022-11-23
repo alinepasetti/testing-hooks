@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef } from 'react';
-import { incrementCounter } from '../../contexts/CounterProvider/actions';
-import { CounterContext } from '../../contexts/CounterProvider/context';
+import { useNavigate } from 'react-router-dom';
 import { loadPosts } from '../../contexts/PostsProvider/actions';
 import { PostsContext } from '../../contexts/PostsProvider/context';
 
@@ -8,19 +7,17 @@ export const Posts = () => {
   const isMounted = useRef(true);
   const {
     postsState: { posts, loading },
-    postsState,
     postsDispatch,
   } = useContext(PostsContext);
 
-  const { counterDispatch } = useContext(CounterContext);
-
+  const navigate = useNavigate();
   useEffect(() => {
+    isMounted.current = true;
     loadPosts(postsDispatch).then((dispatch) => {
       if (isMounted.current) {
         dispatch();
       }
     });
-
     return () => {
       isMounted.current = false;
     };
@@ -30,8 +27,11 @@ export const Posts = () => {
       {loading && <p>LOADING...</p>}
       {!loading &&
         posts.map((p) => (
-          <p onClick={() => incrementCounter(counterDispatch)} key={p.id}>
-            {p.title}
+          <p
+            onClick={() => navigate(`/post/${p.id}?search=tudoazul`)}
+            key={p.id}
+          >
+            {p.id + ' ' + p.title}
           </p>
         ))}
     </>
